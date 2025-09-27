@@ -1,0 +1,718 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Colores base de la nueva paleta */
+    --brand-lime: 70 85% 41%;
+    /* #c1d009 - Verde lima principal */
+    --brand-turquoise: 186 73% 45%;
+    /* #1fb5ca - Azul turquesa */
+    --brand-gray: 0 0% 62%;
+    /* #9d9d9d - Gris neutro */
+    --placeholder-color: 0 0% 62%;
+    /* #9d9d9d - Gris específico para placeholders */
+
+    /* Aplicación de la paleta personalizada */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+
+    --primary: var(--brand-lime);
+    /* Verde lima como color principal */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: var(--brand-turquoise);
+    /* Azul turquesa como secundario */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: var(--brand-gray);
+
+    --accent: var(--brand-turquoise);
+    /* Azul turquesa para acentos */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: var(--brand-gray);
+    --input: var(--brand-gray);
+    --ring: var(--brand-lime);
+
+    --radius: 0.5rem;
+
+    /* Sidebar con la nueva paleta */
+    --sidebar-background: 0 0% 15%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: var(--brand-lime);
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: var(--brand-turquoise);
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 25%;
+    --sidebar-ring: var(--brand-lime);
+  }
+
+  .dark {
+    --background: 0 0% 9%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: var(--brand-lime);
+    --primary-foreground: 0 0% 9%;
+
+    --secondary: var(--brand-turquoise);
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 20%;
+    --muted-foreground: var(--brand-gray);
+
+    --accent: var(--brand-turquoise);
+    --accent-foreground: 0 0% 9%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: var(--brand-gray);
+    --input: var(--brand-gray);
+    --ring: var(--brand-lime);
+
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: var(--brand-lime);
+    --sidebar-primary-foreground: 0 0% 9%;
+    --sidebar-accent: var(--brand-turquoise);
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: var(--brand-lime);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  /* Estilos para los placeholders que se aplican a todos los temas */
+  :root,
+  .dark {
+    --placeholder-color: #4a5568;
+    /* Gris oscuro */
+  }
+
+  /* Estilos para los placeholders */
+  ::placeholder {
+    color: hsl(var(--placeholder-color)) !important;
+    /* #9d9d9d - Gris específico para placeholders */
+    opacity: 1;
+    /* Aseguramos opacidad completa */
+  }
+
+  /* Para navegadores específicos */
+  ::-webkit-input-placeholder {
+    /* Chrome/Opera/Safari */
+    color: hsl(var(--placeholder-color)) !important;
+  }
+
+  ::-moz-placeholder {
+    /* Firefox 19+ */
+    color: hsl(var(--placeholder-color)) !important;
+    opacity: 1;
+  }
+
+  :-ms-input-placeholder {
+    /* IE 10+ */
+    color: hsl(var(--placeholder-color)) !important;
+  }
+
+  :-moz-placeholder {
+    /* Firefox 18- */
+    color: hsl(var(--placeholder-color)) !important;
+    opacity: 1;
+  }
+
+  /* Asegurar que los inputs en modo oscuro también respeten el color */
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: hsl(var(--placeholder-color)) !important;
+  }
+
+  /* Estilos para hovers en inputs y campos */
+  input:hover,
+  textarea:hover,
+  select:hover {
+    border-color: hsl(var(--brand-gray)) !important;
+  }
+
+  /* Estilos para focus en inputs y campos */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: hsl(var(--brand-lime)) !important;
+    outline-color: hsl(var(--brand-lime)) !important;
+  }
+
+  /* Estilos para campos deshabilitados */
+  input:disabled,
+  textarea:disabled,
+  select:disabled {
+    background-color: hsl(var(--muted)) !important;
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Clases personalizadas con la nueva paleta */
+.dashboard-card {
+  @apply bg-card p-6 rounded-lg shadow-md border border-border hover:shadow-lg transition-shadow;
+}
+
+.page-container {
+  @apply p-6 md:p-8 w-full max-w-7xl mx-auto;
+}
+
+.page-header {
+  @apply mb-6 pb-4 border-b border-border;
+}
+
+/* Botones con la paleta personalizada */
+.btn-primary {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/90 transition-colors;
+}
+
+/* Estilos personalizados para formularios */
+.login-input::placeholder {
+  color: hsl(var(--placeholder-color)) !important;
+  /* #9d9d9d - Gris específico para placeholders */
+}
+
+/* Estilos para componentes de shadcn/ui */
+.form-input,
+.form-textarea,
+.form-select {
+  border-color: hsl(var(--brand-gray)) !important;
+}
+
+.form-input:hover,
+.form-textarea:hover,
+.form-select:hover {
+  border-color: hsl(var(--brand-gray)) !important;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  border-color: hsl(var(--brand-lime)) !important;
+  outline-color: hsl(var(--brand-lime)) !important;
+}
+
+/* Estilos para componentes de select y multi-select */
+.select-trigger,
+.multi-select {
+  border-color: hsl(var(--brand-gray)) !important;
+}
+
+.select-trigger:hover,
+.multi-select:hover {
+  border-color: hsl(var(--brand-gray)) !important;
+}
+
+.select-trigger:focus,
+.multi-select:focus {
+  border-color: hsl(var(--brand-lime)) !important;
+  outline-color: hsl(var(--brand-lime)) !important;
+}
+
+/* Estilos para componentes de calendario */
+.calendar,
+.date-picker {
+  border-color: hsl(var(--brand-gray)) !important;
+}
+
+.calendar:hover,
+.date-picker:hover {
+  border-color: hsl(var(--brand-gray)) !important;
+}
+
+/* Estilos para componentes de popover y dropdown */
+.popover,
+.dropdown-menu {
+  border-color: hsl(var(--brand-gray)) !important;
+}
+
+/* Estilos para componentes de card con hover */
+.card:hover {
+  border-color: hsl(var(--brand-gray)) !important;
+}
+
+/* Estilos para componentes de badge */
+.badge {
+  border-color: hsl(var(--brand-gray)) !important;
+}
+
+/* Estilos para componentes de switch y toggle */
+.switch,
+.toggle {
+  background-color: hsl(var(--brand-gray)) !important;
+}
+
+.switch:checked,
+.toggle:checked {
+  background-color: hsl(var(--brand-lime)) !important;
+}
+
+.login-button {
+  @apply bg-brand-turquoise text-white border-2 border-brand-turquoise transition-all duration-200;
+}
+
+.login-button:hover {
+  @apply shadow-lg border-brand-turquoise/80;
+  background-color: hsl(186 73% 45%) !important;
+  /* Mantener color base azul turquesa */
+  box-shadow: 0 4px 12px rgba(31, 181, 202, 0.3);
+}
+
+.forgot-password-link {
+  color: hsl(186 73% 45%) !important;
+  /* Azul turquesa para el link */
+}
+
+/* Dashboard - botones de período */
+.period-button.selected {
+  @apply bg-brand-turquoise text-white;
+}
+
+.period-button.selected:hover {
+  background-color: hsl(186 73% 45%) !important;
+  /* Mantener azul cuando está seleccionado */
+}
+
+/* Botones de empresa y nueva empresa */
+.empresa-button {
+  @apply bg-brand-turquoise text-white border-2 border-brand-turquoise transition-all duration-200;
+}
+
+.empresa-button:hover {
+  @apply shadow-lg border-brand-turquoise/80;
+  background-color: hsl(186 73% 45%) !important;
+  /* Mantener color base */
+  box-shadow: 0 4px 12px rgba(31, 181, 202, 0.3);
+}
+
+/* Espaciado para registro de empresas */
+.empresa-content {
+  @apply ml-8;
+  /* Espacio lateral izquierdo */
+}
+
+/* Sidebar compacto */
+.sidebar-compact .sidebar-item {
+  @apply py-1.5;
+  /* Reducir espaciado entre items */
+}
+
+.sidebar-item {
+  @apply flex items-center;
+  /* Centrar verticalmente */
+}
+
+/* Flechas para elementos desplegables */
+.dropdown-arrow {
+  @apply ml-auto transition-transform duration-200;
+}
+
+.dropdown-arrow.open {
+  @apply rotate-90;
+}
+
+/* Colores consistentes para menús del sidebar */
+.sidebar-menu-group {
+  @apply text-brand-lime hover:bg-brand-lime/10 hover:text-brand-lime;
+}
+
+.sidebar-menu-group.active {
+  @apply bg-brand-lime/15 text-brand-lime border-l-4 border-brand-lime;
+}
+
+.sidebar-submenu-item {
+  @apply text-brand-lime/80 hover:bg-brand-lime/10 hover:text-brand-lime pl-8;
+}
+
+.sidebar-submenu-item.active {
+  @apply bg-brand-lime/15 text-brand-lime border-l-4 border-brand-lime font-medium;
+  border-width: 0;
+}
+
+/* Transiciones suaves para cambios de tema */
+.theme-transition * {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease !important;
+}
+
+/* Animaciones mejoradas */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 5px hsl(var(--brand-lime) / 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 20px hsl(var(--brand-lime) / 0.8), 0 0 30px hsl(var(--brand-lime) / 0.4);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 30px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+
+  70% {
+    transform: scale(0.9);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Clases de utilidad para animaciones */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.6s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s ease-out;
+}
+
+/* Efectos hover mejorados */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Gradientes dinámicos */
+.gradient-brand {
+  background: linear-gradient(135deg, hsl(var(--brand-lime)), hsl(var(--brand-turquoise)));
+}
+
+.gradient-brand-subtle {
+  background: linear-gradient(135deg, hsl(var(--brand-lime) / 0.1), hsl(var(--brand-turquoise) / 0.1));
+}
+
+/* Efectos de card mejorados */
+.card-interactive {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-interactive::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.card-interactive:hover::before {
+  left: 100%;
+}
+
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.btn-accent {
+  @apply bg-accent text-accent-foreground hover:bg-accent/90 transition-colors;
+}
+
+/* Cards con colores de la marca */
+.card-lime {
+  @apply bg-primary/10 border-primary/20 hover:bg-primary/15 transition-colors;
+}
+
+.card-turquoise {
+  @apply bg-secondary/10 border-secondary/20 hover:bg-secondary/15 transition-colors;
+}
+
+.card-neutral {
+  @apply bg-muted/30 border-muted-foreground/20 hover:bg-muted/40 transition-colors;
+}
+
+/* Badges con colores de la marca */
+.badge-lime {
+  @apply bg-primary text-primary-foreground;
+}
+
+.badge-turquoise {
+  @apply bg-secondary text-secondary-foreground;
+}
+
+.badge-neutral {
+  @apply bg-muted-foreground text-white;
+}
+
+/* ==================== ARREGLO DE HOVER EN BOTONES ==================== */
+/* Prevenir que los botones se vuelvan blancos en hover */
+
+/* Botones primarios - mantener color verde con opacidad */
+.btn-primary,
+button[class*="bg-primary"],
+button[class*="bg-green"],
+[data-state="open"]>button,
+button:hover {
+  transition: opacity 0.3s ease !important;
+}
+
+button[class*="bg-primary"]:hover,
+button[class*="bg-green"]:hover {
+  background-color: hsl(var(--primary)) !important;
+  opacity: 0.7 !important;
+}
+
+/* Estilos para el toggle switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.toggle-switch input[type="checkbox"] {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #1fb5ca; /* Color del toggle cuando está activo */
+}
+
+input:focus + .toggle-slider {
+  box-shadow: 0 0 1px #1fb5ca;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.toggle-label {
+  vertical-align: middle;
+  margin-left: 4px;
+  font-size: 14px;
+  color: #333;
+}
+
+/* Botones secundarios - mantener color azul con opacidad */
+button[class*="bg-secondary"]:hover,
+button[class*="bg-blue"]:hover {
+  background-color: hsl(var(--secondary)) !important;
+  opacity: 0.7 !important;
+}
+
+/* Botones destructivos - mantener color rojo con opacidad */
+button[class*="bg-destructive"]:hover,
+button[class*="bg-red"]:hover {
+  background-color: hsl(var(--destructive)) !important;
+  opacity: 0.7 !important;
+}
+
+/* Botones outline - mantener borde con opacidad */
+button[variant="outline"]:hover,
+button[class*="border"]:hover {
+  border-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary)) !important;
+  opacity: 0.7 !important;
+  background-color: transparent !important;
+}
+
+/* Botones ghost - mantener transparente con opacidad en texto */
+button[variant="ghost"]:hover,
+button[class*="hover:bg-accent"]:hover {
+  background-color: hsl(var(--accent) / 0.1) !important;
+  color: hsl(var(--accent-foreground)) !important;
+  opacity: 0.7 !important;
+}
+
+/* Aplicar a todos los botones genéricamente */
+button:not([class*="hover:"]):hover {
+  opacity: 0.7 !important;
+  transform: none !important;
+}
+
+/* Mantener colores específicos en MultiSelect y componentes especiales */
+.bg-blue-100:hover {
+  background-color: rgb(219 234 254) !important;
+  opacity: 0.7 !important;
+}
+
+.text-blue-800:hover {
+  color: rgb(30 64 175) !important;
+  opacity: 0.7 !important;
+}
+
+/* Arreglar botones en modales y formularios */
+[role="dialog"] button:hover,
+.modal button:hover,
+form button:hover {
+  opacity: 0.7 !important;
+}
+
+/* Sidebar buttons */
+[data-sidebar] button:hover {
+  background-color: hsl(var(--sidebar-accent) / 0.1) !important;
+  opacity: 0.7 !important;
+}
+
+.logo-login {
+  background-size: 340px;
+  height: 70px;
+  background-repeat: no-repeat;
+  width: 100%;
+  background-position: center center;
+  margin-top: 0;
+  border-radius: 5px;
+}
+
+.logo-sidebar {
+  background-size: 310px;
+  height: 30px;
+  background-repeat: no-repeat;
+  width: 100%;
+  background-position: center center;
+  margin-top: 0;
+  border-radius: 5px;
+}
+
+.logo-sidebar-empresa {
+  background-size: 310px;
+  height: 40px;
+  background-repeat: no-repeat;
+  width: 100%;
+  background-position: center center;
+  margin-top: 0;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+main *, .border-input {
+  border-color: #c1c1c1;
+}
+
+/* Clase personalizada para altura de header */
+.h-12 {
+  height: 2rem;
+  border-color: hsl(var(--brand-gray));
+}
+
+/* Clase para deshabilitar el efecto hover en filas de tabla */
+.no-hover-effect:hover {
+  background-color: transparent !important;
+}

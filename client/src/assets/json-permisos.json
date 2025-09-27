@@ -1,0 +1,519 @@
+[
+    {
+        "codigo": "dashboard_view",
+        "nombre": "Ver Dashboard"
+    }, {
+        "codigo": "usuarios_view",
+        "nombre": "Modulo Usuarios",
+        "acciones": [
+            {
+                "codigo": "usuarios_view",
+                "nombre": "Ver Usuarios"
+            }
+           
+        ]
+    },
+
+
+    {
+        "codigo": "vista-listado-solicitudes",
+        "nombre": "Listado de Solicitudes",
+        "acciones": [
+            {
+                "codigo": "accion-editar",
+                "nombre": "Editar Solicitud"
+            },
+            {
+                "codigo": "accion-aprobar",
+                "nombre": "Aprobar Solicitud"
+            },
+            {
+                "codigo": "accion-contactar",
+                "nombre": "Marcar Contactado"
+            },
+            {
+                "codigo": "accion-standby",
+                "nombre": "Poner en Stand By"
+            },
+            {
+                "codigo": "accion-reactivar",
+                "nombre": "Reactivar Solicitud"
+            },
+            {
+                "codigo": "accion-deserto",
+                "nombre": "Marcar Deserto"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-listado-paises",
+        "nombre": "Listado de Paises",
+        "acciones": [
+            {
+                "codigo": "accion-editar",
+                "nombre": "Editar País"
+            },
+            {
+                "codigo": "accion-activar",
+                "nombre": "Activar País"
+            },
+            {
+                "codigo": "accion-inactivar",
+                "nombre": "Inactivar País"
+            },
+            {
+                "codigo": "accion-eliminar",
+                "nombre": "Eliminar País"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-formulario-paises",
+        "nombre": "Formulario de Paises",
+        "acciones": [
+            {
+                "codigo": "accion-crear",
+                "nombre": "Crear País"
+            },
+            {
+                "codigo": "accion-actualizar",
+                "nombre": "Actualizar País"
+            },
+            {
+                "codigo": "accion-cancelar",
+                "nombre": "Cancelar"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-listado-departamentos",
+        "nombre": "Listado de Departamentos",
+        "acciones": [
+            {
+                "codigo": "accion-editar",
+                "nombre": "Editar Departamento"
+            },
+            {
+                "codigo": "accion-activar",
+                "nombre": "Activar Departamento"
+            },
+            {
+                "codigo": "accion-inactivar",
+                "nombre": "Inactivar Departamento"
+            },
+            {
+                "codigo": "accion-eliminar",
+                "nombre": "Eliminar Departamento"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-formulario-departamentos",
+        "nombre": "Formulario de Departamentos",
+        "acciones": [
+            {
+                "codigo": "accion-crear",
+                "nombre": "Crear Departamento"
+            },
+            {
+                "codigo": "accion-actualizar",
+                "nombre": "Actualizar Departamento"
+            },
+            {
+                "codigo": "accion-cancelar",
+                "nombre": "Cancelar"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-listado-ciudades",
+        "nombre": "Listado de Ciudades",
+        "acciones": [
+            {
+                "codigo": "accion-editar",
+                "nombre": "Editar Ciudad"
+            },
+            {
+                "codigo": "accion-activar",
+                "nombre": "Activar Ciudad"
+            },
+            {
+                "codigo": "accion-inactivar",
+                "nombre": "Inactivar Ciudad"
+            },
+            {
+                "codigo": "accion-eliminar",
+                "nombre": "Eliminar Ciudad"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-formulario-ciudades",
+        "nombre": "Formulario de Ciudades",
+        "acciones": [
+            {
+                "codigo": "accion-crear",
+                "nombre": "Crear Ciudad"
+            },
+            {
+                "codigo": "accion-actualizar",
+                "nombre": "Actualizar Ciudad"
+            },
+            {
+                "codigo": "accion-cancelar",
+                "nombre": "Cancelar"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-listado-regionales",
+        "nombre": "Listado de Regionales",
+        "acciones": [
+            {
+                "codigo": "accion-editar",
+                "nombre": "Editar Regional"
+            },
+            {
+                "codigo": "accion-activar",
+                "nombre": "Activar Regional"
+            },
+            {
+                "codigo": "accion-inactivar",
+                "nombre": "Inactivar Regional"
+            },
+            {
+                "codigo": "accion-eliminar",
+                "nombre": "Eliminar Regional"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-formulario-regionales",
+        "nombre": "Formulario de Regionales",
+        "acciones": [
+            {
+                "codigo": "accion-crear",
+                "nombre": "Crear Regional"
+            },
+            {
+                "codigo": "accion-actualizar",
+                "nombre": "Actualizar Regional"
+            },
+            {
+                "codigo": "accion-asociar-departamentos",
+                "nombre": "Asociar Departamentos"
+            },
+            {
+                "codigo": "accion-cancelar",
+                "nombre": "Cancelar"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-listado-sucursales",
+        "nombre": "Listado de Sucursales",
+        "acciones": [
+            {
+                "codigo": "accion-editar",
+                "nombre": "Editar Sucursal"
+            },
+            {
+                "codigo": "accion-activar",
+                "nombre": "Activar Sucursal"
+            },
+            {
+                "codigo": "accion-inactivar",
+                "nombre": "Inactivar Sucursal"
+            },
+            {
+                "codigo": "accion-eliminar",
+                "nombre": "Eliminar Sucursal"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-formulario-sucursales",
+        "nombre": "Formulario de Sucursales",
+        "acciones": [
+            {
+                "codigo": "accion-crear",
+                "nombre": "Crear Sucursal"
+            },
+            {
+                "codigo": "accion-actualizar",
+                "nombre": "Actualizar Sucursal"
+            },
+            {
+                "codigo": "accion-cancelar",
+                "nombre": "Cancelar"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-listado-empresas",
+        "nombre": "Listado de Empresas",
+        "acciones": [
+            {
+                "codigo": "accion-editar",
+                "nombre": "Editar Empresa"
+            },
+            {
+                "codigo": "accion-activar",
+                "nombre": "Activar Empresa"
+            },
+            {
+                "codigo": "accion-inactivar",
+                "nombre": "Inactivar Empresa"
+            },
+            {
+                "codigo": "accion-eliminar",
+                "nombre": "Eliminar Empresa"
+            },
+            {
+                "codigo": "accion-exportar",
+                "nombre": "Exportar"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-formulario-empresas",
+        "nombre": "Registro de Empresa",
+        "acciones": [
+            {
+                "codigo": "accion-crear",
+                "nombre": "Crear Empresa"
+            },
+            {
+                "codigo": "accion-actualizar",
+                "nombre": "Actualizar Empresa"
+            },
+            {
+                "codigo": "accion-cancelar",
+                "nombre": "Cancelar"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-listado-prestadores",
+        "nombre": "Listado de Prestadores",
+        "acciones": [
+            {
+                "codigo": "accion-editar",
+                "nombre": "Editar Prestador"
+            },
+            {
+                "codigo": "accion-activar",
+                "nombre": "Activar Prestador"
+            },
+            {
+                "codigo": "accion-inactivar",
+                "nombre": "Inactivar Prestador"
+            },
+            {
+                "codigo": "accion-eliminar",
+                "nombre": "Eliminar Prestador"
+            },
+            {
+                "codigo": "accion-exportar",
+                "nombre": "Exportar"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-formulario-prestadores",
+        "nombre": "Registro de Prestador",
+        "acciones": [
+            {
+                "codigo": "accion-crear",
+                "nombre": "Crear Prestador"
+            },
+            {
+                "codigo": "accion-actualizar",
+                "nombre": "Actualizar Prestador"
+            },
+            {
+                "codigo": "accion-cancelar",
+                "nombre": "Cancelar"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-listado-acercaempresa",
+        "nombre": "Acerca de la Empresa",
+        "acciones": [
+            {
+                "codigo": "accion-ver",
+                "nombre": "Ver Información de la Empresa"
+            },
+            {
+                "codigo": "accion-refrescar",
+                "nombre": "Refrescar Información"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-listado-analistas",
+        "nombre": "Listado de Analistas",
+        "acciones": [
+            {
+                "codigo": "accion-configurar",
+                "nombre": "Configurar Prioridades"
+            },
+            {
+                "codigo": "accion-editar",
+                "nombre": "Editar Analista"
+            },
+            {
+                "codigo": "accion-activar",
+                "nombre": "Activar Analista"
+            },
+            {
+                "codigo": "accion-inactivar",
+                "nombre": "Inactivar Analista"
+            },
+            {
+                "codigo": "accion-eliminar",
+                "nombre": "Eliminar Analista"
+            },
+            {
+                "codigo": "accion-exportar",
+                "nombre": "Exportar Analistas"
+            }
+        ]
+    },
+    {
+        "codigo": "vista-formulario-analistas",
+        "nombre": "Formulario de Analista",
+        "acciones": [
+            {
+                "codigo": "accion-guardar",
+                "nombre": "Guardar Prioridades"
+            },
+            {
+                "codigo": "accion-cancelar",
+                "nombre": "Cancelar"
+            }
+        ]
+    }
+]
+
+
+
+
+
+
+
+
+
+
+
+[
+    {
+        "codigo": "dashboard_view",
+        "nombre": "Ver Dashboard",
+        "acciones": [
+            {
+                "codigo": "ver_dashboard",
+                "nombre": "Ver Dashboard Detallado"
+            }
+        ]
+    },
+    {
+        "codigo": "usuarios_view",
+        "nombre": "Módulo Usuarios",
+        "acciones": [
+            {
+                "codigo": "gestionar_usuarios",
+                "nombre": "Gestionar Usuarios"
+            }
+        ]
+    },
+    {
+        "codigo": "perfiles_view",
+        "nombre": "Ver Perfiles"
+    },
+    {
+        "codigo": "logs_view",
+        "nombre": "Ver Logs del Sistema"
+    },
+    {
+        "codigo": "permisos_view",
+        "nombre": "Ver Permisos",
+        "acciones": [
+            {
+                "codigo": "permisos_manage",
+                "nombre": "Gestionar Permisos"
+            }
+        ]
+    },
+    {
+        "codigo": "candidatos_view",
+        "nombre": "Ver Candidatos"
+    },
+    {
+        "codigo": "empresas_view",
+        "nombre": "Ver Empresas",
+        "acciones": [
+            {
+                "codigo": "gestionar_empresas",
+                "nombre": "Gestionar Empresas"
+            }
+        ]
+    },
+    {
+        "codigo": "prestadores_view",
+        "nombre": "Ver Prestadores"
+    },
+    {
+        "codigo": "qr_view",
+        "nombre": "Ver QR"
+    },
+    {
+        "codigo": "maestro_view",
+        "nombre": "Ver Maestro",
+        "acciones": [
+            {
+                "codigo": "maestro_manage",
+                "nombre": "Gestionar Maestro"
+            }
+        ]
+    },
+    {
+        "codigo": "ordenes_view",
+        "nombre": "Ver Órdenes",
+        "acciones": [
+            {
+                "codigo": "gestionar_ordenes",
+                "nombre": "Gestionar Órdenes"
+            }
+        ]
+    },
+    {
+        "codigo": "certificados_view",
+        "nombre": "Ver Certificados"
+    },
+    {
+        "codigo": "analistas_view",
+        "nombre": "Ver Analistas"
+    },
+    {
+        "codigo": "reportes_view",
+        "nombre": "Ver Reportes",
+        "acciones": [
+            {
+                "codigo": "ver_reportes",
+                "nombre": "Ver Reportes Detallados"
+            }
+        ]
+    },
+    {
+        "codigo": "configuraciones_view",
+        "nombre": "Ver Configuraciones Globales",
+        "acciones": [
+            {
+                "codigo": "gestionar_configuraciones",
+                "nombre": "Gestionar Configuraciones Globales"
+            }
+        ]
+    }
+]
