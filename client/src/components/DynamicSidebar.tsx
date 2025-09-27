@@ -79,12 +79,36 @@ export function DynamicSidebar({ onNavigate }: DynamicSidebarProps) {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
+  // Detectar automáticamente qué menú debe estar desplegado basado en la ruta actual
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const newExpanded = new Set<string>();
+
+    // Buscar qué menú contiene la ruta actual
+    menuItems.forEach((menu, index) => {
+      if (menu.subItems && menu.subItems.length > 0) {
+        // Verificar si algún subitem coincide con la ruta actual
+        const hasActiveSubItem = menu.subItems.some(subItem =>
+          matchPath({ path: subItem.path, end: true }, currentPath)
+        );
+
+        if (hasActiveSubItem) {
+          newExpanded.add(index.toString());
+        }
+      }
+    });
+
+    setExpandedMenus(newExpanded);
+  }, [location.pathname]);
+
   const toggleMenu = (index: number) => {
-    const newExpanded = new Set(expandedMenus);
+    const newExpanded = new Set<string>();
     const menuKey = index.toString();
-    if (newExpanded.has(menuKey)) {
-      newExpanded.delete(menuKey);
+    // Si el menú ya está expandido, lo contraemos
+    if (expandedMenus.has(menuKey)) {
+      // No agregamos nada al Set, queda vacío
     } else {
+      // Si no está expandido, lo expandimos (y automáticamente contraemos otros)
       newExpanded.add(menuKey);
     }
     setExpandedMenus(newExpanded);
@@ -92,8 +116,7 @@ export function DynamicSidebar({ onNavigate }: DynamicSidebarProps) {
 
   const handleNavigate = (path: string) => {
     if (path && path !== '#') {
-      // Colapsar menús y cerrar overlays para evitar estados pegados
-      setExpandedMenus(new Set());
+      // Solo cerrar overlays, no colapsar menús
       setShowUserOverlay(false);
       navigate(path);
       if (onNavigate) onNavigate(path);
@@ -302,11 +325,7 @@ export function DynamicSidebar({ onNavigate }: DynamicSidebarProps) {
                       {menu.icon}
                       <span>{menu.title}</span>
                     </div>
-                    {isExpanded ? (
-                      <ChevronDown className="w-4 h-4" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4" />
-                    )}
+                     <ChevronRight className={`w-4 h-4 menu-arrow ${isExpanded ? 'expanded' : 'collapsed'}`} />
                   </button>
                 ) : (
                   <NavLink
@@ -322,28 +341,30 @@ export function DynamicSidebar({ onNavigate }: DynamicSidebarProps) {
                   </NavLink>
                 )}
 
-                {/* Submenús */}
-                {hasChildren && isExpanded && (
-                  <div className="ml-6 mt-2 space-y-1 border-l-2 border-gray-200 pl-4">
-                    {menu.subItems?.map((subItem: any, subIndex: number) => {
-                      const isSubItemActive = isActive(subItem.path);
-                      return (
-                        <NavLink
-                          key={subIndex}
-                          to={subItem.path || '#'}
-                          onClick={() => handleNavigate(subItem.path || '#')}
-                          className={({ isActive: active }) => `w-full block text-left px-3 py-2 text-sm rounded-lg transition-all duration-200 menu-item-animation sidebar-menu-item ${active ? 'menu-item-active' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
-                            }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            {subItem.icon}
-                            <span>{subItem.title}</span>
-                          </div>
-                        </NavLink>
-                      );
-                    })}
-                  </div>
-                )}
+                 {/* Submenús */}
+                 {hasChildren && (
+                   <div className={`submenu-container ${isExpanded ? 'expanded' : 'collapsed'}`}>
+                     <div className="ml-6 mt-2 space-y-1 border-l-2 border-gray-200 pl-4">
+                       {menu.subItems?.map((subItem: any, subIndex: number) => {
+                         const isSubItemActive = isActive(subItem.path);
+                         return (
+                           <NavLink
+                             key={subIndex}
+                             to={subItem.path || '#'}
+                             onClick={() => handleNavigate(subItem.path || '#')}
+                             className={({ isActive: active }) => `submenu-item w-full block text-left px-3 py-2 text-sm rounded-lg transition-all duration-200 menu-item-animation sidebar-menu-item ${active ? 'menu-item-active' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                               }`}
+                           >
+                             <div className="flex items-center space-x-3">
+                               {subItem.icon}
+                               <span>{subItem.title}</span>
+                             </div>
+                           </NavLink>
+                         );
+                       })}
+                     </div>
+                   </div>
+                 )}
               </div>
             );
           })}
