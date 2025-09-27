@@ -23,6 +23,9 @@ import GestionPermisosPage from './pages/seguridad/GestionPermisosPage';
 import PermisosPage from './pages/seguridad/PermisosPage';
 import MenuPage from './pages/seguridad/MenuPage';
 
+// Páginas del módulo principal
+import AnalisisCompraPage from './pages/principal/AnalisisCompraPage';
+
 import NotFound from './pages/NotFound';
 
 import './App.css';
@@ -64,6 +67,9 @@ function App() {
             <Route path="/seguridad/permisos" element={<PermisosPage />} />
             <Route path="/seguridad/gestion-permisos" element={<GestionPermisosPage />} />
             <Route path="/seguridad/menu" element={<MenuPage />} />
+
+            {/* Rutas del módulo principal */}
+            <Route path="/principal/analisis-compra" element={<AnalisisCompraPage />} />
 
           </Route>
           

@@ -8,13 +8,13 @@ import './Layout.css';
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
 
   // Cerrar sidebar en dispositivos móviles al cambiar de ruta
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
-
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -24,6 +24,30 @@ const Layout = () => {
     setSidebarOpen(false);
   };
 
+  // Detectar si el sidebar está colapsado basado en la clase CSS
+  useEffect(() => {
+    const handleSidebarChange = () => {
+      const sidebarElement = document.querySelector('.sidebar-container');
+      if (sidebarElement) {
+        const isCollapsed = sidebarElement.classList.contains('collapsed');
+        setSidebarCollapsed(isCollapsed);
+      }
+    };
+
+    // Observar cambios en el DOM
+    const observer = new MutationObserver(handleSidebarChange);
+    const sidebarElement = document.querySelector('.sidebar-container');
+    
+    if (sidebarElement) {
+      observer.observe(sidebarElement, {
+        attributes: true,
+        attributeFilter: ['class']
+      });
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="layout">
 
@@ -31,12 +55,12 @@ const Layout = () => {
       {/* Contenido principal */}
       <div className="layout-main">
         {/* Sidebar */}
-        <aside className={`layout-sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
+        <aside className={`layout-sidebar ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
           <DynamicSidebar onNavigate={handleNavigate} />
         </aside>
 
         {/* Contenido principal */}
-        <main className="layout-content">
+        <main className={`layout-content ${sidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'}`}>
           {/* Botón de toggle para móviles */}
           <div className="lg:hidden mb-4">
             <Button

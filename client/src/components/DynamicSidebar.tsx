@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, NavLink, matchPath } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { createPortal } from 'react-dom';
 import {
   Activity,
@@ -56,6 +57,9 @@ export function DynamicSidebar({ onNavigate }: DynamicSidebarProps) {
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
   const [showUserOverlay, setShowUserOverlay] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const sidebarRef = React.useRef<HTMLDivElement>(null);
 
   // Cargar userData de localStorage
@@ -118,6 +122,8 @@ export function DynamicSidebar({ onNavigate }: DynamicSidebarProps) {
     if (path && path !== '#') {
       // Solo cerrar overlays, no colapsar menús
       setShowUserOverlay(false);
+      // Contraer sidebar al navegar
+      setIsCollapsed(true);
       navigate(path);
       if (onNavigate) onNavigate(path);
     }
@@ -129,8 +135,69 @@ export function DynamicSidebar({ onNavigate }: DynamicSidebarProps) {
     return !!matchPath({ path, end: true }, location.pathname);
   };
 
+  // Determinar si el sidebar debe estar expandido (hover o no colapsado)
+  const isExpanded = !isCollapsed || isHovered;
+
+  // Efecto para detectar hover en el área del borde izquierdo cuando está colapsado
+  useEffect(() => {
+    if (!isCollapsed) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      // Limpiar timeout anterior si existe
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+        setHoverTimeout(null);
+      }
+
+      // Si el mouse está en los primeros 32px del borde izquierdo, expandir inmediatamente
+      if (e.clientX <= 32) {
+        setIsHovered(true);
+      }
+      // Si el mouse está dentro del área del sidebar (0-256px), mantener visible
+      else if (e.clientX >= 0 && e.clientX <= 256 && isHovered) {
+        setIsHovered(true);
+      }
+      // Si el mouse está fuera del área completa del sidebar, programar ocultación
+      else if (e.clientX > 256) {
+        const timeout = setTimeout(() => {
+          setIsHovered(false);
+        }, 200); // Delay un poco más largo para evitar cierres accidentales
+        setHoverTimeout(timeout);
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+    };
+  }, [isCollapsed, isHovered, hoverTimeout]);
+
   return (
-    <div className="sidebar-container" ref={sidebarRef}>
+    <div 
+      className={`sidebar-container ${isExpanded ? 'expanded' : 'collapsed'}`}
+      ref={sidebarRef}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        // Limpiar timeout si existe
+        if (hoverTimeout) {
+          clearTimeout(hoverTimeout);
+          setHoverTimeout(null);
+        }
+        // Programar ocultación con delay
+        const timeout = setTimeout(() => {
+          setIsHovered(false);
+        }, 300);
+        setHoverTimeout(timeout);
+      }}
+    >
+      {/* Indicador visual cuando está completamente colapsado (no expandido por hover) */}
+      {isCollapsed && !isHovered && (
+        <div className="sidebar-indicator">☰</div>
+      )}
       {/* Header con información del usuario */}
       <div className="sidebar-header">
         <div className="flex justify-between space-x-3">
@@ -316,29 +383,51 @@ export function DynamicSidebar({ onNavigate }: DynamicSidebarProps) {
             return (
               <div key={index} className="mb-1">
                 {hasChildren ? (
-                  <button
-                    onClick={() => toggleMenu(index)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 font-medium menu-item-animation sidebar-menu-item ${isMenuActive ? 'menu-item-active' : ''
-                      }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      {menu.icon}
-                      <span>{menu.title}</span>
-                    </div>
-                     <ChevronRight className={`w-4 h-4 menu-arrow ${isExpanded ? 'expanded' : 'collapsed'}`} />
-                  </button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => toggleMenu(index)}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 font-medium menu-item-animation sidebar-menu-item ${isMenuActive ? 'menu-item-active' : ''
+                            }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            {menu.icon}
+                            <span>{menu.title}</span>
+                          </div>
+                          <ChevronRight className={`w-4 h-4 menu-arrow ${isExpanded ? 'expanded' : 'collapsed'}`} />
+                        </button>
+                      </TooltipTrigger>
+                      {isCollapsed && !isHovered && (
+                        <TooltipContent side="right" className="ml-2">
+                          <p>{menu.title}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 ) : (
-                  <NavLink
-                    to={(menu as any).path || '#'}
-                    onClick={() => handleNavigate((menu as any).path || '#')}
-                    className={({ isActive: active }) => `w-full block text-left px-3 py-2.5 text-sm rounded-lg transition-all duration-200 font-medium menu-item-animation sidebar-menu-item ${active ? 'menu-item-active' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-                      }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      {menu.icon}
-                      <span>{menu.title}</span>
-                    </div>
-                  </NavLink>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <NavLink
+                          to={(menu as any).path || '#'}
+                          onClick={() => handleNavigate((menu as any).path || '#')}
+                          className={({ isActive: active }) => `w-full block text-left px-3 py-2.5 text-sm rounded-lg transition-all duration-200 font-medium menu-item-animation sidebar-menu-item ${active ? 'menu-item-active' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                            }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            {menu.icon}
+                            <span>{menu.title}</span>
+                          </div>
+                        </NavLink>
+                      </TooltipTrigger>
+                      {isCollapsed && !isHovered && (
+                        <TooltipContent side="right" className="ml-2">
+                          <p>{menu.title}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
 
                  {/* Submenús */}
