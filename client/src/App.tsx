@@ -25,6 +25,8 @@ import MenuPage from './pages/seguridad/MenuPage';
 
 // Páginas del módulo principal
 import AnalisisCompraPage from './pages/principal/AnalisisCompraPage';
+import PlaneacionCompraPage from './pages/principal/PlaneacionCompraPage';
+import ExplosionMaterialPage from './pages/principal/ExplosionMaterialPage';
 
 import NotFound from './pages/NotFound';
 
@@ -70,6 +72,8 @@ function App() {
 
             {/* Rutas del módulo principal */}
             <Route path="/principal/analisis-compra" element={<AnalisisCompraPage />} />
+            <Route path="/principal/planeacion-compra" element={<PlaneacionCompraPage />} />
+            <Route path="/principal/explosion-material" element={<ExplosionMaterialPage />} />
 
           </Route>
           

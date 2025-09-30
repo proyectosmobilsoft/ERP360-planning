@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, FileText, Calendar, BarChart3, Edit, Trash2, Loader2 } from "lucide-react";
+import { Search, FileText, Calendar, BarChart3, Loader2, Edit, Trash2 } from "lucide-react";
 import { 
   Select, 
   SelectContent, 
@@ -11,7 +11,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,7 +22,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
-// INTERFAZ DE PLANEACIÓN DE CONTRATOS
+// INTERFAZ DE PLANEACIÓN CONTRATO
 interface PlaneacionContrato {
   id: number;
   no_req: number;
@@ -35,22 +35,19 @@ interface PlaneacionContrato {
   estado: 'ENPROCESO' | 'CERRADO';
   id_usuario: number;
   fecha_creacion: string;
-  // Campos calculados según la vista SQL
-  no_rqp?: string;
+  // Campos de relación
   numero_contrato?: string;
+  nombre_sede?: string;
+  nombre_zona?: string;
+  no_rqp?: string;
   entidad_contratante?: string;
+  numero_menu_inicial?: number;
+  numero_menu_final?: number;
   fecha_contrato_inicial?: string;
   fecha_contrato_final?: string;
   fecha_contrato_ejecucion?: string;
-  no_ppl?: number;
   no_servicios?: number;
-  raciones?: number;
-  valor_racion?: number;
   valor_total?: number;
-  nombre_sede?: string;
-  codigo_sede?: string;
-  numero_menu_inicial?: number;
-  numero_menu_final?: number;
 }
 
 // INTERFAZ DE CONTRATO
@@ -77,19 +74,22 @@ interface Zona {
   codigo: string;
 }
 
-const AnalisisCompraPage = () => {
+const ExplosionMaterialPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "activo" | "inactivo" | "pendiente" | "ejecutado">("activo");
-  const [activeTab, setActiveTab] = useState("ciclos");
+  const [activeTab, setActiveTab] = useState("materiales");
+  const [editingMaterial, setEditingMaterial] = useState<any>(null);
   const queryClient = useQueryClient();
 
   // Función para asignar colores diferentes a cada estado
   const getEstadoColor = (estado: string) => {
     const colors = {
-      ENPROCESO: "bg-yellow-50 text-yellow-700 border-yellow-200",
-      CERRADO: "bg-green-50 text-green-700 border-green-200",
+      activo: "bg-green-50 text-green-700 border-green-200",
+      inactivo: "bg-gray-50 text-gray-700 border-gray-200",
+      pendiente: "bg-yellow-50 text-yellow-700 border-yellow-200",
+      ejecutado: "bg-blue-50 text-blue-700 border-blue-200",
     };
-    return colors[estado as keyof typeof colors] || "bg-gray-50 text-gray-700 border-gray-200";
+    return colors[estado as keyof typeof colors] || colors.inactivo;
   };
 
   // Query para obtener planeaciones de contratos desde la base de datos
@@ -102,8 +102,8 @@ const AnalisisCompraPage = () => {
     },
   });
 
-  // Query para obtener ciclos (mantener para compatibilidad)
-  const ciclos = planeaciones.map((planeacion: PlaneacionContrato, index: number) => ({
+  // Query para obtener materiales (mantener para compatibilidad)
+  const materiales = planeaciones.map((planeacion: PlaneacionContrato, index: number) => ({
     id: planeacion.id,
     item: planeacion.no_req,
     no_rqp: planeacion.no_rqp || `RQ-00-${String(planeacion.no_req).padStart(4, '0')}`,
@@ -138,74 +138,78 @@ const AnalisisCompraPage = () => {
     },
   });
 
-  // Filtrado de ciclos
-  const ciclosFiltrados = ciclos.filter(ciclo => {
-    const term = (searchTerm || "").toLowerCase();
-    const matchesSearch =
-      (ciclo.item?.toString() || "").toLowerCase().includes(term) ||
-      (ciclo.no_rqp || "").toLowerCase().includes(term) ||
-      (ciclo.no_contrato || "").toLowerCase().includes(term) ||
-      (ciclo.entidad_contratante || "").toLowerCase().includes(term);
-
-    const matchesStatus =
-      statusFilter === "all" ? true : ciclo.estado === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  // Funciones para manejar acciones
-  const handleEditarPlaneacion = (planeacion: PlaneacionContrato) => {
-    console.log('Editar planeación:', planeacion);
-    // Aquí se puede abrir un modal o cambiar a la pestaña de edición
+  // Funciones de manejo
+  const handleEditarMaterial = (material: any) => {
+    console.log('Editar material:', material);
+    setEditingMaterial(material);
+    setActiveTab("registro");
   };
 
-  const handleEliminarPlaneacion = async (id: number) => {
-    console.log('Eliminar planeación:', id);
+  const handleEliminarMaterial = async (id: number) => {
+    console.log('Eliminar material:', id);
     try {
-      // Importar el servicio dinámicamente
+      // Importar el servicio dinámicamente para evitar problemas de importación
       const { planeacionesService } = await import('@/services/planeacionesService');
       await planeacionesService.delete(id);
       
       // Recargar los datos usando React Query
       queryClient.invalidateQueries({ queryKey: ["planeaciones-contratos"] });
     } catch (error) {
-      console.error('Error al eliminar:', error);
+      console.error('Error al eliminar material:', error);
     }
   };
+
+  // Filtrado de materiales
+  const materialesFiltrados = materiales.filter(material => {
+    const term = (searchTerm || "").toLowerCase();
+    const matchesSearch =
+      (material.item?.toString() || "").toLowerCase().includes(term) ||
+      (material.no_rqp || "").toLowerCase().includes(term) ||
+      (material.no_contrato || "").toLowerCase().includes(term) ||
+      (material.entidad_contratante || "").toLowerCase().includes(term);
+
+    const matchesStatus =
+      statusFilter === "all" ? true : material.estado === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="p-4 w-full">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-3xl font-extrabold text-cyan-800 flex items-center gap-2 mb-2">
           <FileText className="w-8 h-8 text-cyan-600" />
-          Análisis de la Compra
+          Explosión de materiales por menús
         </h1>
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-cyan-100/60 p-1 rounded-lg">
           <TabsTrigger
-            value="ciclos"
+            value="materiales"
             className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-md rounded-md transition-all duration-300"
           >
-            Listado de Ciclos
+            Explosión de Materiales
           </TabsTrigger>
           <TabsTrigger
             value="registro"
-            className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-md rounded-md transition-all duration-300"
+            disabled={!editingMaterial}
+            className={`data-[state=active]:bg-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-md rounded-md transition-all duration-300 ${
+              !editingMaterial ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
-            Nuevo Ciclo
+            Editar Explosión
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="ciclos" className="mt-6">
+        <TabsContent value="materiales" className="mt-6">
           <div className="bg-white rounded-lg border">
             <div className="flex items-center justify-between p-4 border-b">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-orange-100 rounded flex items-center justify-center">
                   <FileText className="w-5 h-5 text-orange-600" />
                 </div>
-                <span className="text-lg font-semibold text-gray-700">ANÁLISIS DE COMPRA</span>
+                <span className="text-lg font-semibold text-gray-700">EXPLOSIÓN DE MATERIALES POR MENÚS</span>
               </div>
             </div>
 
@@ -241,7 +245,6 @@ const AnalisisCompraPage = () => {
                 <TableHeader className="bg-cyan-50">
                   <TableRow className="text-left font-semibold text-gray-700">
                     <TableHead className="px-1 py-1 text-teal-600 w-16">Acciones</TableHead>
-                    <TableHead className="px-2 py-2 w-16">Item</TableHead>
                     <TableHead className="px-2 py-2 w-24">No RQP</TableHead>
                     <TableHead className="px-2 py-2 w-28">No Contrato</TableHead>
                     <TableHead className="px-2 py-2 w-48">Entidad Contratante</TableHead>
@@ -254,15 +257,15 @@ const AnalisisCompraPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ciclosFiltrados.length === 0 ? (
+                  {materialesFiltrados.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={11} className="h-24 text-center">
-                        No hay ciclos disponibles.
+                      <TableCell colSpan={10} className="h-24 text-center">
+                        No hay materiales disponibles.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    ciclosFiltrados.map((ciclo) => (
-                      <TableRow key={ciclo.id} className="hover:bg-gray-50">
+                    materialesFiltrados.map((material) => (
+                      <TableRow key={material.id} className="hover:bg-gray-50">
                         <TableCell className="px-1 py-1 w-16">
                           <div className="flex flex-row gap-1 items-center">
                             <TooltipProvider>
@@ -271,8 +274,8 @@ const AnalisisCompraPage = () => {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => handleEditarPlaneacion(planeaciones.find(p => p.id === ciclo.id)!)}
-                                    aria-label="Editar planeación"
+                                    onClick={() => handleEditarMaterial(material)}
+                                    aria-label="Editar material"
                                   >
                                     <Edit className="h-5 w-5 text-cyan-600 hover:text-cyan-800 transition-colors" />
                                   </Button>
@@ -283,95 +286,53 @@ const AnalisisCompraPage = () => {
                               </Tooltip>
                             </TooltipProvider>
 
-                            <AlertDialog>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <AlertDialogTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        aria-label="Eliminar planeación"
-                                      >
-                                        <Trash2 className="h-5 w-5 text-rose-600 hover:text-rose-800 transition-colors" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Eliminar</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>¿Eliminar planeación?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    ¿Estás seguro de que deseas eliminar permanentemente la planeación{" "}
-                                    <strong>{ciclo.item}</strong>?
-                                    Esta acción no se puede deshacer.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleEliminarPlaneacion(ciclo.id)}
-                                    className="bg-red-600 hover:bg-red-700"
-                                  >
-                                    Eliminar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
                           </div>
                         </TableCell>
-                        <TableCell className="px-2 py-2 text-sm text-gray-900 text-left w-16">
-                          {ciclo.item}
-                        </TableCell>
                         <TableCell className="px-2 py-2 text-sm text-gray-900 text-left w-24">
-                          {ciclo.no_rqp}
+                          {material.no_rqp}
                         </TableCell>
                         <TableCell className="px-2 py-2 text-sm text-gray-900 text-left w-28">
-                          {ciclo.no_contrato}
+                          {material.no_contrato}
                         </TableCell>
                         <TableCell className="px-2 py-2 text-sm text-gray-900 text-left w-48">
-                          {ciclo.entidad_contratante}
+                          {material.entidad_contratante}
                         </TableCell>
                         <TableCell className="px-2 py-2 text-sm text-gray-900 text-left w-36">
                           <div className="space-y-0.5">
-                            <div><strong>Inicial:</strong> {new Date(ciclo.fecha_planeacion_inicial).toLocaleDateString()}</div>
-                            <div><strong>Final:</strong> {new Date(ciclo.fecha_planeacion_final).toLocaleDateString()}</div>
-                            <div><strong>Días:</strong> {ciclo.fecha_planeacion_dias}</div>
+                            <div><strong>Inicial:</strong> {new Date(material.fecha_planeacion_inicial).toLocaleDateString()}</div>
+                            <div><strong>Final:</strong> {new Date(material.fecha_planeacion_final).toLocaleDateString()}</div>
+                            <div><strong>Días:</strong> {material.fecha_planeacion_dias}</div>
                           </div>
                         </TableCell>
                         <TableCell className="px-2 py-2 text-sm text-gray-900 text-left w-24">
                           <div className="space-y-0.5">
-                            <div><strong>Inicial:</strong> {ciclo.numero_menu_inicial}</div>
-                            <div><strong>Final:</strong> {ciclo.numero_menu_final}</div>
+                            <div><strong>Inicial:</strong> {material.numero_menu_inicial}</div>
+                            <div><strong>Final:</strong> {material.numero_menu_final}</div>
                           </div>
                         </TableCell>
                         <TableCell className="px-2 py-2 text-sm text-gray-900 text-left w-40">
                           <div className="space-y-0.5">
-                            <div><strong>Inicial:</strong> {new Date(ciclo.fecha_contrato_inicial).toLocaleDateString()}</div>
-                            <div><strong>Final:</strong> {new Date(ciclo.fecha_contrato_final).toLocaleDateString()}</div>
-                            <div><strong>Ejecución:</strong> {new Date(ciclo.fecha_contrato_ejecucion).toLocaleDateString()}</div>
+                            <div><strong>Inicial:</strong> {new Date(material.fecha_contrato_inicial).toLocaleDateString()}</div>
+                            <div><strong>Final:</strong> {new Date(material.fecha_contrato_final).toLocaleDateString()}</div>
+                            <div><strong>Ejecución:</strong> {new Date(material.fecha_contrato_ejecucion).toLocaleDateString()}</div>
                           </div>
                         </TableCell>
                         <TableCell className="px-2 py-2 text-sm text-gray-900 text-left w-32">
                           <div className="space-y-0.5">
-                            <div><strong>Servicios:</strong> {ciclo.cantidad_servicios}</div>
+                            <div><strong>Servicios:</strong> {material.cantidad_servicios}</div>
                           </div>
                         </TableCell>
                         <TableCell className="px-2 py-2 text-sm text-gray-900 text-right w-32">
                           <div className="space-y-0.5">
-                            <div><strong>Total:</strong> ${ciclo.valor_total.toLocaleString()}</div>
+                            <div><strong>Total:</strong> ${material.valor_total.toLocaleString()}</div>
                           </div>
                         </TableCell>
                         <TableCell className="px-2 py-2 text-left w-24">
                           <Badge
                             variant="outline"
-                            className={getEstadoColor(ciclo.estado)}
+                            className={getEstadoColor(material.estado)}
                           >
-                            {ciclo.estado.charAt(0).toUpperCase() + ciclo.estado.slice(1)}
+                            {material.estado.charAt(0).toUpperCase() + material.estado.slice(1)}
                           </Badge>
                         </TableCell>
                       </TableRow>
@@ -497,9 +458,29 @@ const AnalisisCompraPage = () => {
             </div>
           </div>
         </TabsContent>
+
+        <TabsContent value="registro" className="mt-6">
+          <div className="bg-white rounded-lg border p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Editar Material</h3>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setEditingMaterial(null);
+                  setActiveTab("materiales");
+                }}
+              >
+                Cancelar
+              </Button>
+            </div>
+            <p className="text-gray-600">
+              {editingMaterial ? `Editando material con ID: ${editingMaterial.id}` : 'No hay material seleccionado'}
+            </p>
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
 };
 
-export default AnalisisCompraPage;
+export default ExplosionMaterialPage;

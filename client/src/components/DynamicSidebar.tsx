@@ -30,20 +30,28 @@ const menuItems = [
     subItems: [],
   },
   {
-    title: "Principal",
+    title: "Análisis de la compra",
     icon: <BarChart3 className="h-5 w-5" />,
-    subItems: [
-      { title: "Análisis de la compra", path: "/principal/analisis-compra", icon: <BarChart3 className="h-4 w-4" /> },
-    ],
+    path: "/principal/analisis-compra",
+    subItems: [],
   },
   {
-    title: "General",
-    icon: <Package className="h-5 w-5" />,
-    subItems: [
-      { title: "Explosión materiales", path: "/general/explosion-materiales", icon: <Layers className="h-4 w-4" /> },
-      { title: "Planeación Compra", path: "/general/planeacion-compra", icon: <ShoppingCart className="h-4 w-4" /> },
-      { title: "Distribución Unidades", path: "/general/distribucion-unidades", icon: <Truck className="h-4 w-4" /> },
-    ],
+    title: "Explosión materiales",
+    icon: <Layers className="h-5 w-5" />,
+    path: "/principal/explosion-material",
+    subItems: [],
+  },
+  {
+    title: "Planeación Compra",
+    icon: <ShoppingCart className="h-5 w-5" />,
+    path: "/principal/planeacion-compra",
+    subItems: [],
+  },
+  {
+    title: "Distribución Unidades",
+    icon: <Truck className="h-5 w-5" />,
+    path: "/general/distribucion-unidades",
+    subItems: [],
   },
 ];
 
@@ -383,77 +391,55 @@ export function DynamicSidebar({ onNavigate }: DynamicSidebarProps) {
             return (
               <div key={index} className="mb-1">
                 {hasChildren ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => toggleMenu(index)}
-                          className={`w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 font-medium menu-item-animation sidebar-menu-item ${isMenuActive ? 'menu-item-active' : ''
-                            }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            {menu.icon}
-                            <span>{menu.title}</span>
-                          </div>
-                          <ChevronRight className={`w-4 h-4 menu-arrow ${isExpanded ? 'expanded' : 'collapsed'}`} />
-                        </button>
-                      </TooltipTrigger>
-                      {isCollapsed && !isHovered && (
-                        <TooltipContent side="right" className="ml-2">
-                          <p>{menu.title}</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
+                  <button
+                    onClick={() => toggleMenu(index)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 font-medium menu-item-animation sidebar-menu-item ${isMenuActive ? 'menu-item-active' : ''
+                      }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      {menu.icon}
+                      <span>{menu.title}</span>
+                    </div>
+                    <ChevronRight className={`w-4 h-4 menu-arrow ${isExpanded ? 'expanded' : 'collapsed'}`} />
+                  </button>
                 ) : (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <NavLink
-                          to={(menu as any).path || '#'}
-                          onClick={() => handleNavigate((menu as any).path || '#')}
-                          className={({ isActive: active }) => `w-full block text-left px-3 py-2.5 text-sm rounded-lg transition-all duration-200 font-medium menu-item-animation sidebar-menu-item ${active ? 'menu-item-active' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-                            }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            {menu.icon}
-                            <span>{menu.title}</span>
-                          </div>
-                        </NavLink>
-                      </TooltipTrigger>
-                      {isCollapsed && !isHovered && (
-                        <TooltipContent side="right" className="ml-2">
-                          <p>{menu.title}</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
+                  <NavLink
+                    to={(menu as any).path || '#'}
+                    onClick={() => handleNavigate((menu as any).path || '#')}
+                    className={({ isActive: active }) => `w-full block text-left px-3 py-2.5 text-sm rounded-lg transition-all duration-200 font-medium menu-item-animation sidebar-menu-item ${active ? 'menu-item-active' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                      }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      {menu.icon}
+                      <span>{menu.title}</span>
+                    </div>
+                  </NavLink>
                 )}
 
-                 {/* Submenús */}
-                 {hasChildren && (
-                   <div className={`submenu-container ${isExpanded ? 'expanded' : 'collapsed'}`}>
-                     <div className="ml-6 mt-2 space-y-1 border-l-2 border-gray-200 pl-4">
-                       {menu.subItems?.map((subItem: any, subIndex: number) => {
-                         const isSubItemActive = isActive(subItem.path);
-                         return (
-                           <NavLink
-                             key={subIndex}
-                             to={subItem.path || '#'}
-                             onClick={() => handleNavigate(subItem.path || '#')}
-                             className={({ isActive: active }) => `submenu-item w-full block text-left px-3 py-2 text-sm rounded-lg transition-all duration-200 menu-item-animation sidebar-menu-item ${active ? 'menu-item-active' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
-                               }`}
-                           >
-                             <div className="flex items-center space-x-3">
-                               {subItem.icon}
-                               <span>{subItem.title}</span>
-                             </div>
-                           </NavLink>
-                         );
-                       })}
-                     </div>
-                   </div>
-                 )}
+                {/* Submenús */}
+                {hasChildren && (
+                  <div className={`submenu-container ${isExpanded ? 'expanded' : 'collapsed'}`}>
+                    <div className="ml-6 mt-2 space-y-1 border-l-2 border-gray-200 pl-4">
+                      {menu.subItems?.map((subItem: any, subIndex: number) => {
+                        const isSubItemActive = isActive(subItem.path);
+                        return (
+                          <NavLink
+                            key={subIndex}
+                            to={subItem.path || '#'}
+                            onClick={() => handleNavigate(subItem.path || '#')}
+                            className={({ isActive: active }) => `submenu-item w-full block text-left px-3 py-2 text-sm rounded-lg transition-all duration-200 menu-item-animation sidebar-menu-item ${active ? 'menu-item-active' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                              }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              {subItem.icon}
+                              <span>{subItem.title}</span>
+                            </div>
+                          </NavLink>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
