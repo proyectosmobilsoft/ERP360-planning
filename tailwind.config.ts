@@ -7,6 +7,10 @@ export default {
     extend: {
       fontSize: {
         'sm': '0.775rem',
+        '3xl': '1.375rem', // Personalizar text-3xl
+      },
+      spacing: {
+        '6': '1.2rem', // Personalizar mt-6
       },
       borderRadius: {
         lg: "var(--radius)",
