@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, FileText, Calendar, BarChart3, Edit, Trash2, Loader2, Filter, X } from "lucide-react";
+import { toast } from "sonner";
+import { useLoading } from "@/contexts/LoadingContext";
 import {
   Select,
   SelectContent,
@@ -26,6 +28,8 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ReactSelect from "react-select";
 import ContratosModal from "@/components/ContratosModal";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/dist/style.css";
 
 // Estilos personalizados para react-select
 const customSelectStyles = {
@@ -116,6 +120,7 @@ const AnalisisCompraPage = () => {
   const [statusFilter, setStatusFilter] = useState<"all" | "activo" | "inactivo" | "pendiente" | "ejecutado">("activo");
   const [activeTab, setActiveTab] = useState("ciclos");
   const queryClient = useQueryClient();
+  const { startLoading, stopLoading } = useLoading();
 
   // Estados para el formulario
   const [showContratosModal, setShowContratosModal] = useState(false);
@@ -127,6 +132,17 @@ const AnalisisCompraPage = () => {
   const [filtrosActivos, setFiltrosActivos] = useState<string[]>([]);
   const [sedeSeleccionada, setSedeSeleccionada] = useState<any>(null);
   const [zonaSeleccionada, setZonaSeleccionada] = useState<any>(null);
+
+  // Estados para el nuevo ciclo (en el tab)
+  const [contratoSeleccionadoCiclo, setContratoSeleccionadoCiclo] = useState<any>(null);
+  const [sedeSeleccionadaCiclo, setSedeSeleccionadaCiclo] = useState<any>(null);
+  const [fechaInicialCiclo, setFechaInicialCiclo] = useState<Date | null>(null);
+  const [fechaFinalCiclo, setFechaFinalCiclo] = useState<Date | null>(null);
+  const [menusPorFecha, setMenusPorFecha] = useState<any[]>([]);
+  const [diasCalculados, setDiasCalculados] = useState<number>(0);
+  const [mesActual, setMesActual] = useState<Date>(new Date());
+  const [loadingCalendario, setLoadingCalendario] = useState(false);
+  const [detalleCicloNutricional, setDetalleCicloNutricional] = useState<any>(null);
 
   // Función para asignar colores diferentes a cada estado
   const getEstadoColor = (estado: string) => {
@@ -219,6 +235,40 @@ const AnalisisCompraPage = () => {
     enabled: !!contratoSeleccionado?.id,
   });
 
+  // Query para obtener zonas relacionadas al contrato del nuevo ciclo
+  const { data: zonasCicloData = [] } = useQuery({
+    queryKey: ["zonas-ciclo", contratoSeleccionadoCiclo?.id],
+    queryFn: async () => {
+      if (!contratoSeleccionadoCiclo?.id) return [];
+
+      const { data, error } = await supabase
+        .from('prod_zonas_by_contrato')
+        .select(`
+                 prod_zonas_contrato!id_zona (
+                   id,
+                   nombre,
+                   codigo
+                 )
+               `)
+        .eq('id_contrato', contratoSeleccionadoCiclo.id);
+
+      if (error) throw error;
+
+      // Extraer las zonas de la relación
+      const zonas = (data || [])
+        .map((item: any) => item.prod_zonas_contrato)
+        .filter(Boolean)
+        .map((zona: any) => ({
+          id: zona.id,
+          nombre: zona.nombre,
+          codigo: zona.codigo
+        }));
+
+      return zonas;
+    },
+    enabled: !!contratoSeleccionadoCiclo?.id,
+  });
+
   // Opciones para los selects mejorados
   const opcionesSedes = sedes.map((sede: any) => ({
     value: sede.id,
@@ -230,8 +280,21 @@ const AnalisisCompraPage = () => {
     label: zona.nombre
   }));
 
+  const opcionesZonasCiclo = zonasCicloData.map((zona: any) => ({
+    value: zona.id,
+    label: zona.nombre
+  }));
+
   // Función para manejar la selección de contrato
   const handleSelectContrato = (contrato: any) => {
+    // Si estamos en el tab de registro (nuevo ciclo), usar esa función
+    if (activeTab === "registro") {
+      handleSelectContratoCiclo(contrato);
+      setShowContratosModal(false);
+      return;
+    }
+
+    // Lógica original para el formulario principal
     setContratoSeleccionado(contrato);
     setFechaInicial(new Date(contrato.fecha_inicial));
     setFechaFinal(new Date(contrato.fecha_final));
@@ -246,6 +309,201 @@ const AnalisisCompraPage = () => {
 
     // Limpiar la zona seleccionada para que el usuario la elija
     setZonaSeleccionada(null);
+  };
+
+  // Función para manejar la selección de contrato en el nuevo ciclo
+  const handleSelectContratoCiclo = async (contrato: any) => {
+    setContratoSeleccionadoCiclo(contrato);
+
+    // Ejecutar automáticamente el procedimiento al seleccionar el contrato
+    if (contrato?.id) {
+      await ejecutarProcedimientoMenus(contrato.id);
+    }
+  };
+
+  // Función para ejecutar el procedimiento almacenado (inicial - al seleccionar contrato)
+  const ejecutarProcedimientoMenus = async (contratoId?: number) => {
+    const idContrato = contratoId || contratoSeleccionadoCiclo?.id;
+    if (!idContrato) return;
+
+    startLoading();
+    try {
+      // Ejecutar el procedimiento principal que retorna fechas y ciclos
+      const { data: menusData, error: menusError } = await supabase.rpc('sp_calcular_menus_semana', {
+        p_idcontrato: idContrato
+      });
+
+      if (menusError) throw menusError;
+
+      // Ejecutar la función auxiliar que retorna las fechas de inicio y fin
+      const { data: fechasData, error: fechasError } = await supabase.rpc('sp_calcular_menus_semana_fechas', {
+        p_idcontrato: idContrato
+      });
+
+      if (fechasError) throw fechasError;
+
+      // Ejecutar procedimiento de detalle del ciclo nutricional
+      await ejecutarProcedimientoDetalleCiclo(idContrato);
+
+      // Almacenar los menús por fecha en memoria
+      if (menusData && menusData.length > 0) {
+        setMenusPorFecha(menusData);
+      }
+
+      // Establecer las fechas en los filtros
+      if (fechasData && fechasData.length > 0) {
+        const fechas = fechasData[0];
+        if (fechas.inicio && fechas.fin) {
+          const fechaInicio = new Date(fechas.inicio);
+          const fechaFin = new Date(fechas.fin);
+          setFechaInicialCiclo(fechaInicio);
+          setFechaFinalCiclo(fechaFin);
+          
+          // Calcular días
+          const diffTime = Math.abs(fechaFin.getTime() - fechaInicio.getTime());
+          const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+          setDiasCalculados(diffDays);
+        }
+      }
+    } catch (error) {
+      console.error('Error al ejecutar el procedimiento:', error);
+      toast.error('Error al calcular los menús', {
+        description: 'Por favor, verifica que el contrato tenga datos válidos.'
+      });
+    } finally {
+      stopLoading();
+    }
+  };
+
+  // Función para ejecutar el procedimiento con fechas personalizadas
+  const ejecutarProcedimientoMenusFechas = async (contratoId: number, fechaInicio: Date, fechaFin: Date) => {
+    if (!contratoId || !fechaInicio || !fechaFin) return;
+
+    setLoadingCalendario(true);
+    try {
+      // Formatear fechas para el procedimiento (YYYY-MM-DD)
+      const formatoFecha = (fecha: Date) => {
+        const año = fecha.getFullYear();
+        const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+        const dia = String(fecha.getDate()).padStart(2, '0');
+        return `${año}-${mes}-${dia}`;
+      };
+
+      const fechaInicioStr = formatoFecha(fechaInicio);
+      const fechaFinStr = formatoFecha(fechaFin);
+
+      // Ejecutar el procedimiento Sp_calcular_menus_fechas
+      const { data: menusData, error: menusError } = await supabase.rpc('sp_calcular_menus_fechas', {
+        p_idcontrato: contratoId,
+        p_fechainicio: fechaInicioStr,
+        p_fechafin: fechaFinStr
+      });
+
+      if (menusError) throw menusError;
+
+      // Almacenar los menús por fecha en memoria
+      if (menusData && menusData.length > 0) {
+        setMenusPorFecha(menusData);
+        // Establecer el mes actual al primer mes de los resultados
+        if (menusData[0].fecha) {
+          setMesActual(new Date(menusData[0].fecha));
+        }
+      }
+    } catch (error: any) {
+      console.error('Error al ejecutar el procedimiento con fechas:', error);
+      toast.error('Error al calcular los menús', {
+        description: error?.message || 'Error al calcular los menús con las fechas especificadas.'
+      });
+    } finally {
+      setLoadingCalendario(false);
+    }
+  };
+
+  // Función para ejecutar el procedimiento de detalle del ciclo nutricional
+  const ejecutarProcedimientoDetalleCiclo = async (contratoId: number) => {
+    if (!contratoId) return;
+
+    try {
+      const { data: detalleData, error: detalleError } = await supabase.rpc('sp_get_detalle_ciclo_nutricional', {
+        p_id: contratoId
+      });
+
+      if (detalleError) throw detalleError;
+
+      if (detalleData && detalleData.length > 0) {
+        setDetalleCicloNutricional(detalleData[0]);
+        console.log('Detalle del ciclo nutricional:', detalleData[0]);
+      }
+    } catch (error: any) {
+      console.error('Error al obtener detalle del ciclo nutricional:', error);
+      toast.error('Error al obtener detalle del contrato', {
+        description: error?.message || 'Error al cargar la información detallada del contrato.'
+      });
+    }
+  };
+
+  // Función para manejar el clic en "Calcular Análisis"
+  const handleCalcularAnalisis = () => {
+    if (fechaInicialCiclo && fechaFinalCiclo && contratoSeleccionadoCiclo?.id) {
+      ejecutarProcedimientoMenusFechas(contratoSeleccionadoCiclo.id, fechaInicialCiclo, fechaFinalCiclo);
+    }
+  };
+
+  // useEffect para calcular fecha final cuando cambien fecha inicial o días
+  useEffect(() => {
+    if (fechaInicialCiclo && diasCalculados > 0) {
+      // Calcular fecha final sumando los días a la fecha inicial
+      const fechaFinal = new Date(fechaInicialCiclo);
+      fechaFinal.setDate(fechaFinal.getDate() + diasCalculados);
+      setFechaFinalCiclo(fechaFinal);
+    }
+  }, [fechaInicialCiclo, diasCalculados]);
+
+  // Funciones para navegar el calendario
+  const irMesAnterior = () => {
+    const nuevoMes = new Date(mesActual);
+    nuevoMes.setMonth(nuevoMes.getMonth() - 1);
+    setMesActual(nuevoMes);
+  };
+
+  const irMesSiguiente = () => {
+    const nuevoMes = new Date(mesActual);
+    nuevoMes.setMonth(nuevoMes.getMonth() + 1);
+    setMesActual(nuevoMes);
+  };
+
+  // Función para generar todos los días del mes
+  const generarDiasDelMes = (fecha: Date) => {
+    const año = fecha.getFullYear();
+    const mes = fecha.getMonth();
+    const primerDia = new Date(año, mes, 1);
+    const ultimoDia = new Date(año, mes + 1, 0);
+    const diasEnMes = ultimoDia.getDate();
+    
+    const dias = [];
+    for (let i = 1; i <= diasEnMes; i++) {
+      const fechaActual = new Date(año, mes, i);
+      dias.push(fechaActual);
+    }
+    return dias;
+  };
+
+  // Función para obtener el menú de una fecha específica
+  const obtenerMenuPorFecha = (fecha: Date) => {
+    const fechaString = fecha.toISOString().split('T')[0];
+    return menusPorFecha.find(menu => menu.fecha === fechaString);
+  };
+
+  // Función para abrir el nuevo ciclo (cambiar al tab)
+  const abrirNuevoCiclo = () => {
+    setActiveTab("registro");
+    // Limpiar estados anteriores
+    setContratoSeleccionadoCiclo(null);
+    setSedeSeleccionadaCiclo(null);
+    setFechaInicialCiclo(null);
+    setFechaFinalCiclo(null);
+    setMenusPorFecha([]);
+    setDiasCalculados(0);
   };
 
   // Función para limpiar filtros
@@ -331,6 +589,15 @@ const AnalisisCompraPage = () => {
                   <FileText className="w-5 h-5 text-orange-600" />
                 </div>
                 <span className="text-lg font-semibold text-gray-700">ANÁLISIS DE COMPRA</span>
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  onClick={abrirNuevoCiclo}
+                  className="bg-brand-lime hover:bg-brand-lime/90"
+                  size="sm"
+                >
+                  Nuevo Ciclo
+                </Button>
               </div>
             </div>
 
@@ -511,75 +778,77 @@ const AnalisisCompraPage = () => {
         <TabsContent value="registro" className="mt-6">
           {/* Formulario compacto de Datos del Contrato */}
           <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-700 mb-6 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-cyan-600" />
-              Datos del Contrato
-            </h3>
-
+          <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-cyan-800 flex items-center gap-2 mb-2">
+                    <Calendar className="w-6 h-6 text-cyan-600" />
+                    Nuevo Ciclo - Análisis de Menús
+                  </h3>
+                  <p className="text-sm text-gray-600 -mt-2 text-left">
+                    Selecciona un contrato y una sede para calcular los menús de la semana
+                  </p>
+                </div>
+                
+               
+              </div>
+<hr style={{marginTop: '5px'}}/>
             {/* Primera fila - 8 campos readonly */}
-            <div className="grid grid-cols-8 gap-3 mb-4">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-700">N°.Contrato</label>
+            <div className="grid grid-cols-8 gap-2 mb-2">
+              <div className="space-y-1 col-span-3">
+                <label className="text-xs font-medium text-gray-700">Contrato - Cliente</label>
                 <div className="relative">
                   <Input
-                    value={contratoSeleccionado?.numero_contrato || ""}
+                    value={contratoSeleccionadoCiclo ? `${contratoSeleccionadoCiclo.numero_contrato} - ${contratoSeleccionadoCiclo.cliente}` : ""}
                     onFocus={() => setShowContratosModal(true)}
                     className="bg-yellow-50 border-blue-300 cursor-pointer h-8 text-xs"
                     readOnly
+                    placeholder="Haz clic para seleccionar contrato"
                   />
                   <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
                 </div>
               </div>
               <div className="space-y-1 col-span-2">
-                <label className="text-xs font-medium text-gray-700">Cliente</label>
-                <Input
-                  value={contratoSeleccionado?.cliente || ""}
-                  className="h-8 text-xs"
-                  readOnly
-                />
-              </div>
-              <div className="space-y-1 col-span-2">
                 <label className="text-xs font-medium text-gray-700">Objeto</label>
                 <Input
-                  value={contratoSeleccionado?.objeto || ""}
-                  className="h-8 text-xs"
+                  value={contratoSeleccionadoCiclo?.objeto || ""}
+                  className="h-8 text-xs bg-gray-100"
                   readOnly
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-700">Nit Cliente</label>
                 <Input
-                  value={contratoSeleccionado?.nit_cliente || ""}
-                  className="h-8 text-xs"
+                  value={contratoSeleccionadoCiclo?.nit_cliente || ""}
+                  className="h-8 text-xs bg-gray-100"
                   readOnly
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-700">Fecha Inicial</label>
                 <Input
-                  value={contratoSeleccionado?.fecha_inicial ? new Date(contratoSeleccionado.fecha_inicial).toLocaleDateString() : ""}
-                  className="h-8 text-xs"
+                  value={contratoSeleccionadoCiclo?.fecha_inicial ? new Date(contratoSeleccionadoCiclo.fecha_inicial).toLocaleDateString() : ""}
+                  className="h-8 text-xs bg-gray-100"
                   readOnly
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-700">Fecha Final</label>
                 <Input
-                  value={contratoSeleccionado?.fecha_final ? new Date(contratoSeleccionado.fecha_final).toLocaleDateString() : ""}
-                  className="h-8 text-xs"
+                  value={contratoSeleccionadoCiclo?.fecha_final ? new Date(contratoSeleccionadoCiclo.fecha_final).toLocaleDateString() : ""}
+                  className="h-8 text-xs bg-gray-100"
                   readOnly
                 />
               </div>
             </div>
 
             {/* Segunda fila - selects y campos adicionales */}
-            <div className="grid grid-cols-8 gap-3 mb-4">
+            <div className="grid grid-cols-8 gap-2 mb-2">
               <div className="space-y-1 col-span-2">
                 <label className="text-xs font-medium text-gray-700">Sede</label>
                 <ReactSelect
                   options={opcionesSedes}
-                  value={sedeSeleccionada}
-                  onChange={setSedeSeleccionada}
+                  value={sedeSeleccionadaCiclo}
+                  onChange={setSedeSeleccionadaCiclo}
                   className="react-select-container"
                   classNamePrefix="react-select"
                   styles={{
@@ -647,7 +916,7 @@ const AnalisisCompraPage = () => {
               <div className="space-y-1 col-span-2">
                 <label className="text-xs font-medium text-gray-700">Zona</label>
                 <ReactSelect
-                  options={opcionesZonas}
+                  options={opcionesZonasCiclo}
                   value={zonaSeleccionada}
                   onChange={setZonaSeleccionada}
                   className="react-select-container"
@@ -717,110 +986,208 @@ const AnalisisCompraPage = () => {
               <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-700">PPL</label>
                 <Input
-                  value={contratoSeleccionado?.n_ppl || ""}
-                  className="h-8 text-xs bg-yellow-50 border-blue-300"
+                  value={contratoSeleccionadoCiclo?.n_ppl || ""}
+                  className="h-8 text-xs bg-gray-100"
                   readOnly
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-700">Servicio</label>
                 <Input
-                  value={contratoSeleccionado?.n_servicios || ""}
-                  className="h-8 text-xs bg-yellow-50 border-blue-300"
+                  value={contratoSeleccionadoCiclo?.n_servicios || ""}
+                  className="h-8 text-xs bg-gray-100"
                   readOnly
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-700">Serv/Día</label>
                 <Input
-                  value={contratoSeleccionado?.servicios_dia || ""}
-                  className="h-8 text-xs bg-yellow-50 border-blue-300"
+                  value={contratoSeleccionadoCiclo?.servicios_dia || ""}
+                  className="h-8 text-xs bg-gray-100"
                   readOnly
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-700">Raciones</label>
                 <Input
-                  value={contratoSeleccionado?.raciones_dia || ""}
-                  className="h-8 text-xs bg-yellow-50 border-blue-300"
+                  value={contratoSeleccionadoCiclo?.raciones_dia || ""}
+                  className="h-8 text-xs bg-gray-100"
                   readOnly
                 />
               </div>
             </div>
 
-            {/* Periodo a Analizar - Tipo Filtro */}
-            <div className="border-t pt-4 bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-xs font-semibold text-gray-700 flex items-center gap-2">
-                  <Filter className="w-4 h-4" />
-                  Filtros de Análisis
-                </h4>
-                {filtrosActivos.length > 0 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={limpiarFiltros}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 text-xs"
-                  >
-                    <X className="w-3 h-3 mr-1" />
-                    Limpiar
-                  </Button>
-                )}
-              </div>
 
-              {/* Filtros activos */}
-              {filtrosActivos.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {filtrosActivos.map((filtro, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {filtro}
-                    </Badge>
-                  ))}
-                </div>
-              )}
 
-              <div className="flex items-center gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-gray-700">Fecha Inicial</label>
-                  <DatePicker
-                    selected={fechaInicialAnalisis}
-                    onChange={(date) => setFechaInicialAnalisis(date)}
-                    dateFormat="dd/MM/yyyy"
-                    className="w-40 h-8 px-3 py-2 border border-gray-300 rounded-md bg-yellow-50 border-blue-300 text-xs"
-                    placeholderText="dd/mm/aaaa"
-                  />
+            {/* Calendario con menús asignados */}
+            <div className="border-t pt-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg mt-4 shadow-sm">
+                <div className="bg-white bg-opacity-80 backdrop-blur-sm rounded-lg p-4 mb-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-lg font-bold text-gray-800 flex items-center gap-3">
+                        <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-2 rounded-lg">
+                          <Calendar className="w-5 h-5 text-white" />
+                        </div>
+                        Calendario de Menús Asignados
+                      </h4>
+                      <p className="text-sm text-gray-600 ml-11 -mt-2 text-left">
+                        Visualiza todos los menús programados para el período seleccionado
+                      </p>
+                    </div>
+                    
+                    {/* Rango de Fechas Calculado - Al lado del título del calendario */}
+                    <div className="flex items-end gap-2">
+                      <div className="space-y-1 w-32">
+                        <label className="text-xs font-medium text-gray-700">Fecha Inicial</label>
+                        <DatePicker
+                          selected={fechaInicialCiclo}
+                          onChange={(date) => setFechaInicialCiclo(date)}
+                          dateFormat="dd/MM/yyyy"
+                          className="w-full h-8 px-2 py-1 border border-gray-300 rounded-md bg-white text-xs"
+                          showIcon
+                          icon={<Calendar className="w-3 h-3" />}
+                          disabled={!contratoSeleccionadoCiclo}
+                        />
+                      </div>
+                      <div className="space-y-1 w-16">
+                        <label className="text-xs font-medium text-gray-700">Días</label>
+                        <Input
+                          value={diasCalculados}
+                          onChange={(e) => setDiasCalculados(parseInt(e.target.value) || 0)}
+                          className="w-full h-8 text-xs"
+                          type="number"
+                          disabled={!contratoSeleccionadoCiclo}
+                        />
+                      </div>
+                      <div className="space-y-1 w-32">
+                        <label className="text-xs font-medium text-gray-700">Fecha Final</label>
+                        <Input
+                          value={fechaFinalCiclo ? new Date(fechaFinalCiclo).toLocaleDateString() : ""}
+                          className="h-8 text-xs bg-gray-100"
+                          readOnly
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-gray-700 opacity-0">Ejecutar</label>
+                        <Button
+                          onClick={handleCalcularAnalisis}
+                          disabled={!contratoSeleccionadoCiclo || !fechaInicialCiclo || !fechaFinalCiclo || loadingCalendario}
+                          className="h-8 px-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 flex items-center gap-2"
+                        >
+                          {loadingCalendario ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Search className="w-4 h-4" />
+                          )}
+                          <span className="text-xs font-medium">Calcular Análisis</span>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-gray-700">Fecha Final</label>
-                  <DatePicker
-                    selected={fechaFinalAnalisis}
-                    onChange={(date) => setFechaFinalAnalisis(date)}
-                    dateFormat="dd/MM/yyyy"
-                    className="w-40 h-8 px-3 py-2 border border-gray-300 rounded-md bg-yellow-50 border-blue-300 text-xs"
-                    placeholderText="dd/mm/aaaa"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-gray-700">N° Dias</label>
-                  <Input
-                    placeholder="Días"
-                    className="w-20 h-8 text-xs"
-                    type="number"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    onClick={aplicarFiltros}
-                    className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white h-8 w-8 p-0 shadow-lg hover:shadow-xl transition-all duration-200"
-                    title="Buscar"
-                  >
-                    <Search className="w-4 h-4" />
-                  </Button>
+
+                <div className="space-y-4">
+                  {/* Navegación del calendario */}
+                  <div className="flex items-center justify-between bg-gradient-to-r from-white to-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
+                    <Button 
+                      onClick={irMesAnterior}
+                      variant="outline" 
+                      size="sm" 
+                      className="text-gray-700 border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-colors"
+                    >
+                      ← Anterior
+                    </Button>
+                    <div className="text-center">
+                      <h3 className="text-xl font-bold text-gray-800">
+                        {mesActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        Navega entre los meses para ver los menús
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={irMesSiguiente}
+                      variant="outline" 
+                      size="sm" 
+                      className="text-gray-700 border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-colors"
+                    >
+                      Siguiente →
+                    </Button>
+                  </div>
+
+                  {/* Loading del calendario */}
+                  {loadingCalendario ? (
+                    <div className="bg-white border rounded-lg p-12 flex flex-col items-center justify-center">
+                      <Loader2 className="w-12 h-12 animate-spin text-cyan-600 mb-4" />
+                      <p className="text-lg font-medium text-gray-700">Calculando menús...</p>
+                      <p className="text-sm text-gray-500 mt-2">Por favor espera un momento</p>
+                    </div>
+                  ) : (
+                    /* Grid del calendario */
+                    <div className="grid grid-cols-7 gap-1 bg-white border rounded-lg overflow-hidden">
+                    {/* Encabezados de días */}
+                    {['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].map(day => (
+                      <div key={day} className="bg-cyan-50 p-2 text-center font-semibold text-gray-700 text-sm border-b">
+                        {day}
+                      </div>
+                    ))}
+
+                    {/* Generar espacios vacíos para alinear el primer día */}
+                    {(() => {
+                      const primerDia = new Date(mesActual.getFullYear(), mesActual.getMonth(), 1);
+                      const diaSemana = primerDia.getDay(); // 0 = Domingo, 1 = Lunes, etc.
+                      // Ajustar para que lunes sea 0 (restar 1 y manejar domingo)
+                      const diaSemanaAjustado = diaSemana === 0 ? 6 : diaSemana - 1;
+                      const espaciosVacios = [];
+                      for (let i = 0; i < diaSemanaAjustado; i++) {
+                        espaciosVacios.push(
+                          <div key={`empty-${i}`} className="p-2 border-r border-b min-h-[100px] bg-gray-50"></div>
+                        );
+                      }
+                      return espaciosVacios;
+                    })()}
+
+                    {/* Días del mes */}
+                    {generarDiasDelMes(mesActual).map((fecha, index) => {
+                      const esFinDeSemana = fecha.getDay() === 0 || fecha.getDay() === 6;
+                      const menuDelDia = obtenerMenuPorFecha(fecha);
+
+                      return (
+                        <div
+                          key={index}
+                          className={`p-2 border-r border-b min-h-[100px] flex flex-col ${
+                            esFinDeSemana ? 'bg-red-50' : 'bg-white'
+                          }`}
+                        >
+                          <div className={`text-sm font-medium mb-2 ${
+                            esFinDeSemana ? 'text-red-600' : 'text-gray-900'
+                          }`}>
+                            {fecha.getDate()}
+                          </div>
+
+                          <div className="flex-1 flex flex-col justify-center">
+                            {menuDelDia ? (
+                              <>
+                                <div className="bg-blue-500 text-white px-1 py-0.5 rounded text-xs font-bold mb-1 text-center">
+                                  MENU #{menuDelDia.ciclos}
+                                </div>
+                                <div className="text-gray-600 text-xs text-center">
+                                  28 recetas asignadas
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-xs text-gray-400 text-center">
+                                Sin menú
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  )}
                 </div>
               </div>
-            </div>
           </div>
 
           {/* Modal de Contratos */}
