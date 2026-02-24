@@ -2098,29 +2098,47 @@ const AnalisisCompraPage = () => {
                                     const numeroMenuInicial = menusOrdenados[0]?.ciclos || 1;
                                     const numeroMenuFinal = menusOrdenados[menusOrdenados.length - 1]?.ciclos || 28;
 
-                                    // Crear la planeación
-                                    const { planeacionesService } = await import('@/services/planeacionesService');
-                                    
                                     // Obtener el usuario actual desde la sesión de Supabase
                                     const { data: { user } } = await supabase.auth.getUser();
                                     
-                                    const nuevaPlaneacion: any = {
-                                      id_contrato: contratoSeleccionadoCiclo.id,
-                                      id_sede: sedeSeleccionadaCiclo?.value || contratoSeleccionadoCiclo.id_sede || 1,
-                                      id_detalle_zona: zonaSeleccionada?.value || 1,
-                                      fecha_inicial: formatoFecha(fechaInicio),
-                                      fecha_final: formatoFecha(fechaFin),
-                                      num_ciclos: diasDiferencia,
-                                      numero_menu_inicial: numeroMenuInicial,
-                                      numero_menu_final: numeroMenuFinal,
-                                      no_servicios: contratoSeleccionadoCiclo.no_servicios || 0,
-                                      valor_total: contratoSeleccionadoCiclo.valor_total || 0,
-                                      estado: 'ENPROCESO',
-                                      id_usuario: user?.id ? parseInt(user.id) : 1,
-                                      no_req: 0 // Se generará automáticamente en el backend
-                                    };
+                                    // Construir el JSON de detalle con los menús y fechas
+                                    const detalleJson = menusPorFecha.map((menu: any) => ({
+                                      id_menu: menu.ciclos || 0, // número de ciclo
+                                      fecha: menu.fecha || formatoFecha(fechaInicio)
+                                    }));
 
-                                    await planeacionesService.create(nuevaPlaneacion);
+                                    // Validar que se haya seleccionado una unidad de servicio
+                                    if (!unidadServicioSeleccionada?.value) {
+                                      toast.error('Error', {
+                                        description: 'Debes seleccionar una unidad de servicio para guardar el ciclo.'
+                                      });
+                                      setShowConfirmGuardarCiclo(false);
+                                      return;
+                                    }
+
+                                    // Llamar al procedimiento almacenado para guardar la planeación
+                                    // p_id_detalle_zona debe ser el id_unidad_servicio seleccionada
+                                    const { data: resultado, error: errorProcedimiento } = await supabase.rpc('sp_prod_planeacion_contratos', {
+                                      p_id: 0, // 0 para crear nuevo
+                                      p_id_contrato: contratoSeleccionadoCiclo.id,
+                                      p_id_sede: sedeSeleccionadaCiclo?.value || contratoSeleccionadoCiclo.id_sede || 1,
+                                      p_id_usuario: user?.id ? parseInt(user.id) : 1,
+                                      p_id_detalle_zona: unidadServicioSeleccionada.value, // id_unidad_servicio
+                                      p_fecha_inicial: formatoFecha(fechaInicio),
+                                      p_fecha_final: formatoFecha(fechaFin),
+                                      p_num_ciclos: diasDiferencia,
+                                      p_detalle: detalleJson,
+                                      p_estado: 'ENPROCESO',
+                                      p_accion: 'guardar',
+                                      p_id_unidad_zona: unidadServicioSeleccionada.value, // también enviar como id_unidad_zona
+                                      p_num_ppl: ppl || null
+                                    });
+
+                                    if (errorProcedimiento) throw errorProcedimiento;
+
+                                    if (!resultado || !resultado.success) {
+                                      throw new Error(resultado?.message || 'Error al guardar la planeación');
+                                    }
 
                                     toast.success('Ciclo guardado exitosamente', {
                                       description: `Se guardó el ciclo del ${fechaInicio.toLocaleDateString()} al ${fechaFin.toLocaleDateString()}`
@@ -2130,7 +2148,28 @@ const AnalisisCompraPage = () => {
                                     await queryClient.invalidateQueries({ queryKey: ['planeaciones-contratos'] });
                                     await queryClient.refetchQueries({ queryKey: ['planeaciones-contratos'] });
                                     
+                                    // Limpiar el formulario
+                                    setContratoSeleccionadoCiclo(null);
+                                    setSedeSeleccionadaCiclo(null);
+                                    setFechaInicialCiclo(null);
+                                    setFechaFinalCiclo(null);
+                                    setMenusPorFecha([]);
+                                    setDiasCalculados(0);
+                                    setMesActual(new Date());
+                                    setUnidadServicioSeleccionada(null);
+                                    setProductosDetalleZona([]);
+                                    setShowMenuDetailModal(false);
+                                    setMostrarCostos(false);
+                                    setPpl(0);
+                                    setServicio(0);
+                                    setServicioDia(0);
+                                    setRaciones(0);
+                                    setZonaSeleccionada(null);
+                                    
                                     setShowConfirmGuardarCiclo(false);
+                                    
+                                    // Redirigir al listado
+                                    setActiveTab("ciclos");
                                   } catch (error: any) {
                                     console.error('Error al guardar el ciclo:', error);
                                     toast.error('Error al guardar el ciclo', {
